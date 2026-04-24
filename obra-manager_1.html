@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0b1118">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ObraManager · Grupo Edisur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg: #0b1118;
+  --bg2: #111c27;
+  --bg3: #162030;
+  --card: #1a2a3a;
+  --border: #243545;
+  --accent: #f59e0b;
+  --accent2: #3b82f6;
+  --accent3: #10b981;
+  --danger: #ef4444;
+  --rain: #60a5fa;
+  --text: #e8f0f8;
+  --text2: #8faabb;
+  --text3: #4a6175;
+  --radius: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; font-size: 15px; overflow-x: hidden; }
+
+.app-header {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 10px 16px 8px; position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; gap: 10px;
+}
+.app-logo { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: var(--accent); letter-spacing: 1px; white-space: nowrap; }
+.app-obra-pill {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 20px;
+  padding: 4px 10px; font-size: 11px; color: var(--text2); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; font-weight: 500;
+}
+
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--bg2); border-top: 1px solid var(--border); display: flex; z-index: 100;
+}
+.nav-btn {
+  flex: 1; padding: 10px 4px 8px; background: none; border: none; color: var(--text3);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: 9px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+  letter-spacing: 0.5px; cursor: pointer; transition: color 0.2s;
+}
+.nav-btn svg { width: 21px; height: 21px; }
+.nav-btn.active { color: var(--accent); }
+
+.page { display: none; padding: 0 0 80px; max-width: 600px; margin: 0 auto; }
+.page.active { display: block; }
+.page-inner { padding: 16px; }
+
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow);
+}
+.card-title {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--text2); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+label { display: block; font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 5px; letter-spacing: 0.5px; text-transform: uppercase; }
+input, select, textarea {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: 'Barlow', sans-serif;
+  appearance: none; -webkit-appearance: none; transition: border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent2); }
+textarea { resize: none; min-height: 70px; }
+.field { margin-bottom: 13px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+select option { background: var(--bg2); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 11px 18px; border-radius: 8px; border: none;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: 0.8px; cursor: pointer; transition: all 0.2s; width: 100%;
+}
+.btn-primary { background: var(--accent); color: #0b1118; }
+.btn-primary:hover { background: #fbbf24; }
+.btn-secondary { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); }
+.btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+.btn-danger { background: rgba(239,68,68,0.12); border: 1px solid var(--danger); color: var(--danger); }
+.btn-sm { padding: 7px 12px; font-size: 12px; width: auto; }
+
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.5px;
+}
+.badge-green { background: rgba(16,185,129,0.15); color: var(--accent3); border: 1px solid rgba(16,185,129,0.3); }
+.badge-yellow { background: rgba(245,158,11,0.15); color: var(--accent); border: 1px solid rgba(245,158,11,0.3); }
+.badge-rain { background: rgba(96,165,250,0.15); color: var(--rain); border: 1px solid rgba(96,165,250,0.3); }
+.badge-red { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+
+.list-item {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 11px 13px; margin-bottom: 7px; display: flex; align-items: flex-start; gap: 10px;
+}
+.list-item-main { flex: 1; }
+.list-item-title { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
+.list-item-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.list-item-actions { display: flex; gap: 6px; align-items: center; }
+
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.stat-box {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 13px 12px 11px; text-align: center;
+}
+.stat-val { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 800; line-height: 1; }
+.stat-label { font-size: 10px; color: var(--text2); margin-top: 4px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+.stat-accent { color: var(--accent); }
+.stat-green { color: var(--accent3); }
+.stat-blue { color: var(--accent2); }
+.stat-rain { color: var(--rain); }
+
+.section-title {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 20px;
+  letter-spacing: 0.5px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.section-title span { color: var(--accent); }
+
+.empty-state { text-align: center; padding: 28px 16px; color: var(--text3); font-size: 13px; }
+
+/* OBRA CARDS accordion */
+.obra-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 10px; overflow: hidden; transition: border-color 0.2s;
+}
+.obra-card.selected { border-color: var(--accent); }
+.obra-card-header {
+  padding: 13px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer;
+}
+.obra-card-header:active { background: rgba(255,255,255,0.03); }
+.obra-card-icon {
+  width: 36px; height: 36px; border-radius: 8px; background: var(--bg3);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 17px;
+}
+.obra-card-info { flex: 1; min-width: 0; }
+.obra-card-name { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.obra-card-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.obra-card-arrow { color: var(--text3); font-size: 20px; font-weight: 300; transition: transform 0.25s; line-height: 1; }
+.obra-card.open .obra-card-arrow { transform: rotate(90deg); color: var(--accent); }
+
+.obra-detail {
+  display: none; border-top: 1px solid var(--border);
+  background: var(--bg3); padding: 16px 15px;
+}
+.obra-card.open .obra-detail { display: block; animation: fadeDown 0.2s ease; }
+@keyframes fadeDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200;
+  display: flex; align-items: flex-end; justify-content: center; animation: fadeIn 0.2s;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 16px 16px 0 0;
+  padding: 20px 16px 36px; width: 100%; max-width: 600px;
+  animation: slideUp 0.25s ease; max-height: 90vh; overflow-y: auto;
+}
+.modal-title {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800;
+  margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;
+}
+.modal-close { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 6px; width: 30px; height: 30px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes slideUp { from { transform:translateY(60px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+
+.progress-bar { background: var(--bg); border-radius: 20px; height: 7px; overflow: hidden; margin-top: 5px; }
+.progress-fill { height: 100%; border-radius: 20px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 0.5s ease; }
+
+.tab-bar { display: flex; gap: 6px; margin-bottom: 16px; }
+.tab-btn {
+  flex: 1; padding: 8px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text2); font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: 0.5px; cursor: pointer; transition: all 0.2s;
+}
+.tab-btn.active { background: var(--accent); color: #0b1118; border-color: var(--accent); }
+
+.toast {
+  position: fixed; bottom: 82px; left: 50%; transform: translateX(-50%);
+  background: var(--accent3); color: #0b1118; padding: 9px 20px; border-radius: 20px;
+  font-weight: 700; font-size: 13px; z-index: 300; animation: toastIn 0.3s ease;
+  white-space: nowrap; box-shadow: 0 4px 20px rgba(16,185,129,0.4);
+  font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.5px;
+}
+.toast.error { background: var(--danger); color: white; box-shadow: 0 4px 20px rgba(239,68,68,0.4); }
+@keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+
+.unit-item { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; margin-bottom:7px; }
+.unit-item-name { flex:1; font-size:14px; font-weight:500; }
+.qty-btn { width:32px; height:32px; border-radius:6px; border:none; font-size:18px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.qty-minus { background:rgba(239,68,68,0.15); color:var(--danger); }
+.qty-plus { background:rgba(16,185,129,0.15); color:var(--accent3); }
+.qty-input { width:52px; background:var(--bg3); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:6px 4px; font-size:15px; font-weight:700; text-align:center; font-family:'Barlow Condensed',sans-serif; }
+
+.export-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+/* HERO BANNER */
+.hero-banner {
+  background: linear-gradient(160deg, #0d2035 0%, #162a40 45%, #0d1a28 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 26px 20px 22px; position: relative; overflow: hidden;
+}
+.hero-banner::before {
+  content:''; position:absolute; top:-50px; right:-30px;
+  width:180px; height:180px;
+  background: radial-gradient(circle, rgba(245,158,11,0.14) 0%, transparent 70%);
+  border-radius:50%;
+}
+.hero-banner::after {
+  content:''; position:absolute; bottom:-30px; left:0px;
+  width:140px; height:140px;
+  background: radial-gradient(circle, rgba(59,130,246,0.09) 0%, transparent 70%);
+  border-radius:50%;
+}
+.hero-eyebrow {
+  font-family:'Barlow Condensed',sans-serif; font-size:10px; font-weight:700;
+  letter-spacing:3.5px; color:var(--accent); text-transform:uppercase; margin-bottom:8px;
+  position:relative; z-index:1;
+}
+.hero-group {
+  font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:600;
+  letter-spacing:2px; color:var(--text2); text-transform:uppercase; margin-bottom:4px;
+  position:relative; z-index:1;
+}
+.hero-company {
+  font-family:'Barlow Condensed',sans-serif; font-size:34px; font-weight:900;
+  line-height:1; color:var(--text); letter-spacing:-0.5px;
+  position:relative; z-index:1;
+}
+.hero-company em { color:var(--accent); font-style:normal; }
+.hero-division {
+  font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:600;
+  color:var(--text2); margin-top:3px; letter-spacing:1px;
+  position:relative; z-index:1;
+}
+.hero-tagline {
+  font-size:12px; color:var(--text3); margin-top:10px; font-weight:400;
+  position:relative; z-index:1; letter-spacing:0.3px;
+}
+.hero-obra-row {
+  margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.07);
+  display:flex; align-items:center; gap:10px; position:relative; z-index:1;
+}
+.hero-obra-label { font-size:10px; font-weight:700; color:var(--text3); letter-spacing:1.5px; text-transform:uppercase; white-space:nowrap; }
+.hero-obra-val { font-size:14px; font-weight:600; color:var(--accent3); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hero-obra-btn { background:var(--accent); color:#0b1118; border:none; border-radius:6px; padding:6px 13px; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:800; letter-spacing:0.5px; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+
+/* ITEM ROW inside obra detail */
+.item-row {
+  display:flex; align-items:center; gap:8px; padding:10px 12px;
+  background:var(--bg2); border:1px solid var(--border); border-radius:8px; margin-bottom:7px;
+}
+.item-row-info { flex:1; min-width:0; }
+.item-row-name { font-weight:600; font-size:14px; }
+.item-row-sub { font-size:11px; color:var(--text2); margin-top:1px; }
+.item-row-val { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:800; color:var(--accent3); min-width:44px; text-align:right; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-logo">⚒ OBRA</div>
+  <div class="app-obra-pill" id="headerObraName">Sin obra activa</div>
+</div>
+
+<!-- PAGE: HOME -->
+<div id="page-home" class="page active">
+  <div class="hero-banner">
+    <div class="hero-eyebrow">Sistema de gestión de obra</div>
+    <div class="hero-group">Grupo</div>
+    <div class="hero-company"><em>Edisur</em></div>
+    <div class="hero-division">Obras de Loteos II</div>
+    <div class="hero-tagline">Registro diario · Control de avance · Reportes de obra</div>
+    <div class="hero-obra-row">
+      <div class="hero-obra-label">Obra activa</div>
+      <div class="hero-obra-val" id="hero-obra-val">Sin seleccionar</div>
+      <button class="hero-obra-btn" onclick="showPage('obras')">CAMBIAR</button>
+    </div>
+  </div>
+
+  <div class="page-inner">
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-val stat-accent" id="stat-dias-lab">—</div><div class="stat-label">Días Labor.</div></div>
+      <div class="stat-box"><div class="stat-val stat-rain" id="stat-dias-lluvia">—</div><div class="stat-label">Días Lluvia</div></div>
+      <div class="stat-box"><div class="stat-val stat-green" id="stat-unidades">—</div><div class="stat-label">Unid. Total</div></div>
+      <div class="stat-box"><div class="stat-val stat-blue" id="stat-registros">—</div><div class="stat-label">Registros</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--accent2)"></div>ÚLTIMOS REGISTROS</div>
+      <div id="ultimos-registros">
+        <div class="empty-state">Usá la pestaña <strong>CARGA</strong> para registrar el día.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: CARGA -->
+<div id="page-carga" class="page">
+  <div class="page-inner">
+    <div class="section-title">Carga <span>Diaria</span></div>
+
+    <div id="carga-no-obra" class="card" style="text-align:center;padding:24px 16px;display:none;">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px;">Primero seleccioná una obra activa desde la pestaña <strong>Obras</strong>.</div>
+      <button class="btn btn-primary" onclick="showPage('obras')">IR A OBRAS</button>
+    </div>
+
+    <div id="carga-form">
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>DATOS DEL DÍA</div>
+        <div class="field-row">
+          <div class="field"><label>Fecha</label><input type="date" id="reg-fecha"></div>
+          <div class="field"><label>Tipo de día</label>
+            <select id="reg-tipo">
+              <option value="laborable">Laborable</option>
+              <option value="lluvia">🌧 Lluvia</option>
+              <option value="feriado">Feriado</option>
+              <option value="sin_actividad">Sin actividad</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Ubicación de trabajo</label>
+          <div class="field-row3">
+            <div><input type="text" id="reg-barrio" placeholder="Barrio"></div>
+            <div><input type="text" id="reg-manzana" placeholder="Manzana"></div>
+            <div><input type="text" id="reg-lote" placeholder="Lote / Nº"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Personal en obra</label>
+          <input type="number" id="reg-personal" placeholder="Cantidad de personas" min="0">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot" style="background:var(--accent3)"></div>UNIDADES EJECUTADAS</div>
+        <div id="units-daily-list"></div>
+        <div id="no-units-msg" style="font-size:13px;color:var(--text3);padding:4px 0 8px;">Sin ítems configurados. Abrí la obra en la pestaña <strong>Obras</strong> y agregá los ítems.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="dot" style="background:var(--text3)"></div>OBSERVACIONES</div>
+        <div class="field"><textarea id="reg-obs" placeholder="Notas, incidentes, materiales, clima..."></textarea></div>
+        <button class="btn btn-primary" onclick="guardarRegistro()">💾 GUARDAR REGISTRO</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: OBRAS -->
+<div id="page-obras" class="page">
+  <div class="page-inner">
+    <div class="section-title">Gestión de <span>Obras</span></div>
+    <button class="btn btn-primary" onclick="showModal('modal-nueva-obra')" style="margin-bottom:16px;">+ NUEVA OBRA</button>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="filterObras('activa',this)">ACTIVAS</button>
+      <button class="tab-btn" onclick="filterObras('cerrada',this)">CERRADAS</button>
+      <button class="tab-btn" onclick="filterObras('todas',this)">TODAS</button>
+    </div>
+    <div id="obras-list"></div>
+  </div>
+</div>
+
+<!-- PAGE: REPORTES -->
+<div id="page-reportes" class="page">
+  <div class="page-inner">
+    <div class="section-title">Reportes <span>& Export</span></div>
+
+    <div id="rep-no-obra" class="card" style="text-align:center;padding:24px 16px;display:none;">
+      <div style="font-size:13px;color:var(--text2);">Seleccioná una obra activa para generar reportes.</div>
+    </div>
+
+    <div id="rep-content">
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>PERÍODO</div>
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="setRepPeriod('dia',this)">DÍA</button>
+          <button class="tab-btn" onclick="setRepPeriod('semana',this)">SEMANA</button>
+          <button class="tab-btn" onclick="setRepPeriod('mes',this)">MES</button>
+          <button class="tab-btn" onclick="setRepPeriod('total',this)">TOTAL</button>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Desde</label><input type="date" id="rep-desde" onchange="renderReporte()"></div>
+          <div class="field"><label>Hasta</label><input type="date" id="rep-hasta" onchange="renderReporte()"></div>
+        </div>
+      </div>
+      <div id="reporte-summary"></div>
+      <div class="card">
+        <div class="card-title"><div class="dot" style="background:var(--accent2)"></div>EXPORTAR</div>
+        <div class="export-row">
+          <button class="btn btn-secondary" onclick="exportExcel()">📊 EXCEL (.xlsx)</button>
+          <button class="btn btn-secondary" onclick="exportPDF()">📄 PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('home')" id="nav-home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    INICIO
+  </button>
+  <button class="nav-btn" onclick="showPage('carga')" id="nav-carga">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    CARGA
+  </button>
+  <button class="nav-btn" onclick="showPage('obras')" id="nav-obras">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+    OBRAS
+  </button>
+  <button class="nav-btn" onclick="showPage('reportes')" id="nav-reportes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    REPORTES
+  </button>
+</nav>
+
+<!-- MODAL: NUEVA OBRA -->
+<div class="modal-overlay hidden" id="modal-nueva-obra">
+  <div class="modal">
+    <div class="modal-title">NUEVA OBRA <button class="modal-close" onclick="closeModal('modal-nueva-obra')">✕</button></div>
+    <div class="field"><label>Nombre de la obra *</label><input type="text" id="nob-nombre" placeholder="Ej: Red de Gas Barrio Norte"></div>
+    <div class="field"><label>Tipo de obra</label>
+      <select id="nob-tipo">
+        <option>Red de Gas</option><option>Red de Agua</option><option>Red Cloacal</option>
+        <option>Energía Eléctrica</option><option>Vialidad / Calles</option><option>Obra múltiple</option><option>Otra</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Localidad</label><input type="text" id="nob-localidad" placeholder="Ciudad/Municipio"></div>
+      <div class="field"><label>Contratista</label><input type="text" id="nob-contratista" placeholder="Empresa"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Fecha inicio</label><input type="date" id="nob-inicio"></div>
+      <div class="field"><label>Fecha fin prev.</label><input type="date" id="nob-fin"></div>
+    </div>
+    <div class="field"><label>Observaciones</label><textarea id="nob-obs" placeholder="Expediente, descripción general..."></textarea></div>
+    <button class="btn btn-primary" onclick="crearObra()">CREAR OBRA</button>
+  </div>
+</div>
+
+<!-- MODAL: ADD ITEM -->
+<div class="modal-overlay hidden" id="modal-add-item">
+  <div class="modal">
+    <div class="modal-title">NUEVO ÍTEM <button class="modal-close" onclick="closeModal('modal-add-item')">✕</button></div>
+    <div class="field"><label>Nombre del ítem *</label><input type="text" id="item-nombre" placeholder="Ej: Pilar premoldeado simple"></div>
+    <div class="field-row">
+      <div class="field"><label>Unidad de medida</label>
+        <select id="item-unidad">
+          <option>un</option><option>m</option><option>m²</option><option>m³</option>
+          <option>kg</option><option>tn</option><option>gl</option><option>lote</option>
+        </select>
+      </div>
+      <div class="field"><label>Cant. contrato</label><input type="number" id="item-total" placeholder="0" min="0"></div>
+    </div>
+    <button class="btn btn-primary" onclick="agregarItem()">AGREGAR ÍTEM</button>
+  </div>
+</div>
+
+<!-- MODAL: VER REGISTRO -->
+<div class="modal-overlay hidden" id="modal-ver-registro">
+  <div class="modal">
+    <div class="modal-title">DETALLE REGISTRO <button class="modal-close" onclick="closeModal('modal-ver-registro')">✕</button></div>
+    <div id="modal-registro-content"></div>
+  </div>
+</div>
+
+<script>
+const DB_KEY = 'obramanager_v3';
+let state = { obras: [], registros: [], activeObraId: null, nextId: 1 };
+let currentItemObraId = null;
+let openObraId = null;
+let obrasFilter = 'activa';
+let repPeriod = 'dia';
+
+function loadState() { try { const r=localStorage.getItem(DB_KEY); if(r) state=JSON.parse(r); } catch(e){} }
+function saveState() { localStorage.setItem(DB_KEY, JSON.stringify(state)); }
+function genId() { return state.nextId++; }
+
+// NAV
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const nb=document.getElementById('nav-'+name); if(nb) nb.classList.add('active');
+  if(name==='home') renderHome();
+  if(name==='carga') renderCarga();
+  if(name==='obras') renderObras();
+  if(name==='reportes') renderReportes();
+}
+function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function toast(msg, isError=false) {
+  const el=document.createElement('div');
+  el.className='toast'+(isError?' error':''); el.textContent=msg;
+  document.body.appendChild(el); setTimeout(()=>el.remove(),2500);
+}
+
+// HOME
+function renderHome() {
+  const obra=getActiveObra();
+  updateHeader(obra);
+  const regs=obra?getRegistrosObra(obra.id):[];
+  const totalU=regs.reduce((s,r)=>s+(r.unidades||[]).reduce((a,u)=>a+u.qty,0),0);
+  document.getElementById('stat-dias-lab').textContent=obra?regs.filter(r=>r.tipo==='laborable').length:'—';
+  document.getElementById('stat-dias-lluvia').textContent=obra?regs.filter(r=>r.tipo==='lluvia').length:'—';
+  document.getElementById('stat-unidades').textContent=obra?totalU:'—';
+  document.getElementById('stat-registros').textContent=obra?regs.length:'—';
+  const last5=[...regs].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,5);
+  const el=document.getElementById('ultimos-registros');
+  if(!obra||last5.length===0) {
+    el.innerHTML='<div class="empty-state">Usá la pestaña <strong>CARGA</strong> para registrar el día.</div>'; return;
+  }
+  el.innerHTML=last5.map(r=>{
+    const tb=r.tipo==='lluvia'?'<span class="badge badge-rain">🌧 LLUVIA</span>':r.tipo==='laborable'?'<span class="badge badge-green">✔</span>':'<span class="badge badge-yellow">'+r.tipo.toUpperCase()+'</span>';
+    const us=(r.unidades||[]).filter(u=>u.qty>0).map(u=>`${u.nombre}: ${u.qty} ${u.unidad}`).join(' · ');
+    const loc=[r.barrio,r.manzana,r.lote].filter(Boolean).join(' / ');
+    return `<div class="list-item">
+      <div class="list-item-main">
+        <div class="list-item-title">${formatDate(r.fecha)} ${tb}</div>
+        ${loc?`<div class="list-item-sub">📍 ${loc}</div>`:''}
+        ${us?`<div class="list-item-sub">📦 ${us}</div>`:''}
+        ${r.personal?`<div class="list-item-sub">👷 ${r.personal} pers.</div>`:''}
+      </div>
+      <div class="list-item-actions">
+        <button class="btn btn-secondary btn-sm" onclick="verRegistro(${r.id})">VER</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarRegistro(${r.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateHeader(obra) {
+  const hv=document.getElementById('hero-obra-val');
+  const hp=document.getElementById('headerObraName');
+  if(obra) {
+    hv.textContent=obra.nombre; hv.style.color='var(--accent3)';
+    hp.innerHTML=`<span style="color:var(--accent3);">●</span> ${obra.nombre}`;
+  } else {
+    hv.textContent='Sin seleccionar'; hv.style.color='var(--text3)';
+    hp.textContent='Sin obra activa';
+  }
+}
+
+// CARGA
+function renderCarga() {
+  const obra=getActiveObra();
+  const today=new Date().toISOString().split('T')[0];
+  if(!document.getElementById('reg-fecha').value) document.getElementById('reg-fecha').value=today;
+  if(!obra) {
+    document.getElementById('carga-no-obra').style.display='';
+    document.getElementById('carga-form').style.display='none'; return;
+  }
+  document.getElementById('carga-no-obra').style.display='none';
+  document.getElementById('carga-form').style.display='';
+  const items=obra.items||[];
+  const ul=document.getElementById('units-daily-list');
+  const nm=document.getElementById('no-units-msg');
+  if(items.length===0) { ul.innerHTML=''; nm.style.display=''; return; }
+  nm.style.display='none';
+  ul.innerHTML=items.map(it=>`
+    <div class="unit-item">
+      <div class="unit-item-name">${it.nombre} <span style="color:var(--text3);font-size:12px;">(${it.unidad})</span></div>
+      <button class="qty-btn qty-minus" onclick="adjQty('${it.id}',-1)">−</button>
+      <input class="qty-input" type="number" id="qty-${it.id}" value="0" min="0">
+      <button class="qty-btn qty-plus" onclick="adjQty('${it.id}',1)">+</button>
+    </div>
+  `).join('');
+}
+
+function adjQty(itemId,delta) {
+  const inp=document.getElementById('qty-'+itemId);
+  if(inp) inp.value=Math.max(0,parseInt(inp.value||0)+delta);
+}
+
+function guardarRegistro() {
+  const obra=getActiveObra();
+  if(!obra) { toast('Sin obra activa',true); return; }
+  const fecha=document.getElementById('reg-fecha').value;
+  if(!fecha) { toast('Ingresá la fecha',true); return; }
+  const unidades=(obra.items||[]).map(it=>({
+    id:it.id, nombre:it.nombre, unidad:it.unidad,
+    qty:parseInt(document.getElementById('qty-'+it.id)?.value||0)
+  })).filter(u=>u.qty>0);
+  state.registros.push({
+    id:genId(), obraId:obra.id, fecha,
+    tipo:document.getElementById('reg-tipo').value,
+    barrio:document.getElementById('reg-barrio').value.trim(),
+    manzana:document.getElementById('reg-manzana').value.trim(),
+    lote:document.getElementById('reg-lote').value.trim(),
+    personal:parseInt(document.getElementById('reg-personal').value)||0,
+    unidades, obs:document.getElementById('reg-obs').value.trim()
+  });
+  saveState();
+  (obra.items||[]).forEach(it=>{ const inp=document.getElementById('qty-'+it.id); if(inp) inp.value=0; });
+  document.getElementById('reg-obs').value='';
+  document.getElementById('reg-personal').value='';
+  toast('✓ Registro guardado');
+}
+
+function eliminarRegistro(id) {
+  if(!confirm('¿Eliminar este registro?')) return;
+  state.registros=state.registros.filter(r=>r.id!==id);
+  saveState(); renderHome();
+}
+
+function verRegistro(id) {
+  const r=state.registros.find(x=>x.id===id); if(!r) return;
+  const loc=[r.barrio,r.manzana,r.lote].filter(Boolean).join(' / ');
+  const units=(r.unidades||[]).map(u=>`<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between;"><span>${u.nombre}</span><strong>${u.qty} ${u.unidad}</strong></div>`).join('');
+  document.getElementById('modal-registro-content').innerHTML=`
+    <div class="field-row" style="margin-bottom:12px;">
+      <div><label>FECHA</label><div style="font-weight:600;">${formatDate(r.fecha)}</div></div>
+      <div><label>TIPO</label><div>${r.tipo}</div></div>
+    </div>
+    <div class="field-row" style="margin-bottom:12px;">
+      <div><label>PERSONAL</label><div>${r.personal||'—'}</div></div>
+      <div><label>UBICACIÓN</label><div style="font-size:13px;">${loc||'—'}</div></div>
+    </div>
+    ${units?`<div style="margin-bottom:12px;"><label>UNIDADES</label>${units}</div>`:''}
+    ${r.obs?`<div><label>OBSERVACIONES</label><div style="font-size:13px;color:var(--text2);">${r.obs}</div></div>`:''}
+  `;
+  showModal('modal-ver-registro');
+}
+
+// OBRAS
+function filterObras(f,btn) {
+  obrasFilter=f;
+  document.querySelectorAll('#page-obras .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderObras();
+}
+
+function renderObras() {
+  const list=document.getElementById('obras-list');
+  let obras=state.obras;
+  if(obrasFilter!=='todas') obras=obras.filter(o=>o.estado===obrasFilter);
+  if(obras.length===0) { list.innerHTML='<div class="empty-state">Sin obras en esta categoría.</div>'; return; }
+  const icons={'Red de Gas':'🔥','Red de Agua':'💧','Red Cloacal':'🌊','Energía Eléctrica':'⚡','Vialidad / Calles':'🛣️','Obra múltiple':'🏗️','Otra':'🔧'};
+  list.innerHTML=obras.sort((a,b)=>b.id-a.id).map(o=>{
+    const isActive=state.activeObraId===o.id;
+    const isOpen=openObraId===o.id;
+    const regs=getRegistrosObra(o.id);
+    const items=o.items||[];
+    const badgeHtml=isActive?'<span class="badge badge-green">ACTIVA</span>':o.estado==='cerrada'?'<span class="badge badge-red">CERRADA</span>':'<span class="badge badge-yellow">INACT.</span>';
+
+    const itemsHtml=items.length===0
+      ?`<div style="font-size:13px;color:var(--text3);padding:6px 0 10px;">Sin ítems. Agregá los trabajos ejecutables de esta obra.</div>`
+      :items.map(it=>{
+        const totalEj=regs.reduce((s,r)=>s+(r.unidades||[]).find(u=>u.id===it.id)?.qty||0,0);
+        const pct=it.totalContrato>0?Math.min(100,Math.round(totalEj/it.totalContrato*100)):0;
+        return `<div class="item-row">
+          <div class="item-row-info">
+            <div class="item-row-name">${it.nombre} <span style="color:var(--text3);font-size:11px;">(${it.unidad})</span></div>
+            ${it.totalContrato>0?`<div class="item-row-sub">Contrato: ${it.totalContrato} ${it.unidad} · Avance: ${pct}%</div>`:'<div class="item-row-sub">Sin cant. contrato</div>'}
+            ${it.totalContrato>0?`<div class="progress-bar" style="margin-top:4px;"><div class="progress-fill" style="width:${pct}%"></div></div>`:''}
+          </div>
+          <div class="item-row-val">${totalEj}</div>
+          <button class="btn btn-danger btn-sm" onclick="eliminarItemObra('${o.id}','${it.id}')">✕</button>
+        </div>`;
+      }).join('');
+
+    return `<div class="obra-card ${isActive?'selected':''} ${isOpen?'open':''}" id="obra-card-${o.id}">
+      <div class="obra-card-header" onclick="toggleObraDetail(${o.id})">
+        <div class="obra-card-icon">${icons[o.tipo]||'🏗️'}</div>
+        <div class="obra-card-info">
+          <div class="obra-card-name">${o.nombre}</div>
+          <div class="obra-card-sub">${o.tipo}${o.localidad?' · '+o.localidad:''}</div>
+          <div class="obra-card-sub">${regs.length} registros · ${items.length} ítems</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          ${badgeHtml}
+          <div class="obra-card-arrow">›</div>
+        </div>
+      </div>
+      <div class="obra-detail">
+        ${o.estado!=='cerrada'?`<button class="btn ${isActive?'btn-secondary':'btn-primary'} btn-sm" style="margin-bottom:14px;" onclick="setActiveObra(${o.id})">
+          ${isActive?'✔ OBRA ACTIVA — SELECCIONADA':'▶ ACTIVAR ESTA OBRA'}
+        </button>`:''}
+
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--text2);margin-bottom:10px;text-transform:uppercase;">Ítems / Unidades ejecutables</div>
+        <div id="items-detail-${o.id}">${itemsHtml}</div>
+        ${o.estado!=='cerrada'?`<button class="btn btn-secondary btn-sm" style="margin-bottom:14px;" onclick="openAddItem(${o.id})">+ AGREGAR ÍTEM</button>`:''}
+        ${o.estado==='activa'?`<hr style="border:none;border-top:1px solid var(--border);margin:4px 0 12px;">
+        <button class="btn btn-danger btn-sm" onclick="cerrarObra(${o.id})">🔒 CERRAR OBRA</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleObraDetail(id) {
+  openObraId = openObraId===id ? null : id;
+  renderObras();
+}
+
+function setActiveObra(id) {
+  const obra=state.obras.find(o=>o.id===id);
+  if(!obra||obra.estado==='cerrada') { toast('No se puede activar',true); return; }
+  state.activeObraId=id; saveState();
+  renderObras(); updateHeader(getActiveObra());
+  toast('✓ Obra activa: '+obra.nombre);
+}
+
+function crearObra() {
+  const nombre=document.getElementById('nob-nombre').value.trim();
+  if(!nombre) { toast('Ingresá el nombre',true); return; }
+  const obra={
+    id:genId(), nombre,
+    tipo:document.getElementById('nob-tipo').value,
+    localidad:document.getElementById('nob-localidad').value.trim(),
+    contratista:document.getElementById('nob-contratista').value.trim(),
+    inicio:document.getElementById('nob-inicio').value,
+    fin:document.getElementById('nob-fin').value,
+    obs:document.getElementById('nob-obs').value.trim(),
+    estado:'activa', items:[]
+  };
+  state.obras.push(obra);
+  state.activeObraId=obra.id;
+  openObraId=obra.id;
+  saveState();
+  closeModal('modal-nueva-obra');
+  ['nob-nombre','nob-localidad','nob-contratista','nob-inicio','nob-fin','nob-obs'].forEach(id=>document.getElementById(id).value='');
+  toast('✓ Obra creada y activada');
+  renderObras(); updateHeader(getActiveObra());
+}
+
+function cerrarObra(id) {
+  const obra=state.obras.find(o=>o.id===id); if(!obra) return;
+  if(!confirm(`¿Cerrar "${obra.nombre}"?`)) return;
+  obra.estado='cerrada';
+  if(state.activeObraId===id) state.activeObraId=null;
+  saveState(); renderObras(); updateHeader(getActiveObra());
+  toast('Obra cerrada');
+}
+
+// ITEMS
+function openAddItem(obraId) {
+  currentItemObraId=obraId;
+  document.getElementById('item-nombre').value='';
+  document.getElementById('item-total').value='';
+  showModal('modal-add-item');
+}
+
+function agregarItem() {
+  const obra=state.obras.find(o=>o.id===currentItemObraId); if(!obra) return;
+  const nombre=document.getElementById('item-nombre').value.trim();
+  if(!nombre) { toast('Ingresá el nombre del ítem',true); return; }
+  const item={id:'i'+genId(), nombre, unidad:document.getElementById('item-unidad').value, totalContrato:parseFloat(document.getElementById('item-total').value)||0};
+  if(!obra.items) obra.items=[];
+  obra.items.push(item);
+  saveState();
+  closeModal('modal-add-item');
+  toast('✓ Ítem agregado');
+  renderObras();
+  if(document.getElementById('page-carga').classList.contains('active')) renderCarga();
+}
+
+function eliminarItemObra(obraId,itemId) {
+  const obra=state.obras.find(o=>o.id==obraId);
+  if(!obra||!confirm('¿Eliminar este ítem?')) return;
+  obra.items=(obra.items||[]).filter(i=>i.id!==itemId);
+  saveState(); renderObras();
+}
+
+// REPORTES
+function setRepPeriod(p,btn) {
+  repPeriod=p;
+  document.querySelectorAll('#page-reportes .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); setRepDates(); renderReporte();
+}
+function setRepDates() {
+  const today=new Date(), fmt=d=>d.toISOString().split('T')[0];
+  let desde, hasta=fmt(today);
+  if(repPeriod==='dia') { desde=hasta; }
+  else if(repPeriod==='semana') { const d=new Date(today); d.setDate(d.getDate()-6); desde=fmt(d); }
+  else if(repPeriod==='mes') { desde=fmt(new Date(today.getFullYear(),today.getMonth(),1)); }
+  else { desde='2020-01-01'; }
+  document.getElementById('rep-desde').value=desde;
+  document.getElementById('rep-hasta').value=hasta;
+}
+function renderReportes() {
+  const obra=getActiveObra();
+  if(!obra) {
+    document.getElementById('rep-no-obra').style.display='';
+    document.getElementById('rep-content').style.display='none'; return;
+  }
+  document.getElementById('rep-no-obra').style.display='none';
+  document.getElementById('rep-content').style.display='';
+  setRepDates(); renderReporte();
+}
+function renderReporte() {
+  const obra=getActiveObra(); if(!obra) return;
+  const desde=document.getElementById('rep-desde').value;
+  const hasta=document.getElementById('rep-hasta').value;
+  const regs=getRegistrosObra(obra.id).filter(r=>r.fecha>=desde&&r.fecha<=hasta);
+  const diasLab=regs.filter(r=>r.tipo==='laborable').length;
+  const diasLluvia=regs.filter(r=>r.tipo==='lluvia').length;
+  const items=obra.items||[];
+  const itemTotals={};
+  regs.forEach(r=>(r.unidades||[]).forEach(u=>{
+    if(!itemTotals[u.id]) itemTotals[u.id]={nombre:u.nombre,unidad:u.unidad,qty:0};
+    itemTotals[u.id].qty+=u.qty;
+  }));
+  document.getElementById('reporte-summary').innerHTML=`
+    <div class="card">
+      <div class="card-title"><div class="dot"></div>RESUMEN · ${formatDate(desde)}${desde!==hasta?` – ${formatDate(hasta)}`:''}</div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-val stat-accent">${diasLab}</div><div class="stat-label">Laborables</div></div>
+        <div class="stat-box"><div class="stat-val stat-rain">${diasLluvia}</div><div class="stat-label">Lluvia</div></div>
+        <div class="stat-box"><div class="stat-val stat-blue">${regs.filter(r=>r.tipo==='feriado').length}</div><div class="stat-label">Feriados</div></div>
+        <div class="stat-box"><div class="stat-val stat-green">${regs.reduce((s,r)=>s+(r.personal||0),0)}</div><div class="stat-label">Jorn/Hombre</div></div>
+      </div>
+      ${Object.keys(itemTotals).length>0?`
+        <div class="card-title" style="margin-top:4px;"><div class="dot" style="background:var(--accent3)"></div>PRODUCCIÓN PERÍODO</div>
+        ${Object.values(itemTotals).map(it=>{
+          const contr=(items.find(x=>x.nombre===it.nombre)||{}).totalContrato||0;
+          const allTime=getRegistrosObra(obra.id).reduce((s,r)=>s+(r.unidades||[]).find(u=>u.nombre===it.nombre)?.qty||0,0);
+          const pct=contr>0?Math.min(100,Math.round(allTime/contr*100)):0;
+          return `<div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+              <div style="font-weight:600;font-size:14px;">${it.nombre}</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--accent);">${it.qty} <span style="font-size:12px;color:var(--text2);">${it.unidad}</span></div>
+            </div>
+            ${contr>0?`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:3px;"><span>Avance global</span><span>${allTime}/${contr} (${pct}%)</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`:''}
+          </div>`;
+        }).join('')}
+      `:`<div style="font-size:13px;color:var(--text3);">Sin unidades en el período.</div>`}
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--accent2)"></div>REGISTROS (${regs.length})</div>
+      ${regs.length===0?'<div class="empty-state" style="padding:10px 0;">Sin registros en el período</div>':
+        [...regs].sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(r=>{
+          const loc=[r.barrio,r.manzana,r.lote].filter(Boolean).join('/');
+          const us=(r.unidades||[]).filter(u=>u.qty>0).map(u=>`${u.nombre}: ${u.qty}`).join(' · ');
+          const tb=r.tipo==='lluvia'?'<span class="badge badge-rain">🌧</span>':r.tipo==='laborable'?'<span class="badge badge-green">✔</span>':'<span class="badge badge-yellow">'+r.tipo+'</span>';
+          return `<div class="list-item" style="margin-bottom:5px;">
+            <div class="list-item-main">
+              <div class="list-item-title" style="font-size:13px;">${formatDate(r.fecha)} ${tb}</div>
+              ${loc?`<div class="list-item-sub">📍 ${loc}</div>`:''}
+              ${us?`<div class="list-item-sub">📦 ${us}</div>`:''}
+            </div>
+          </div>`;
+        }).join('')}
+    </div>
+  `;
+}
+
+// EXPORT EXCEL
+function exportExcel() {
+  const obra=getActiveObra(); if(!obra) return;
+  const desde=document.getElementById('rep-desde').value;
+  const hasta=document.getElementById('rep-hasta').value;
+  const regs=getRegistrosObra(obra.id).filter(r=>r.fecha>=desde&&r.fecha<=hasta).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const wb=XLSX.utils.book_new(), items=obra.items||[];
+  const headers=['Fecha','Tipo Día','Barrio','Manzana','Lote/N°','Personal'];
+  items.forEach(it=>headers.push(`${it.nombre} (${it.unidad})`));
+  headers.push('Observaciones');
+  const rows=regs.map(r=>{
+    const row=[r.fecha,r.tipo,r.barrio||'',r.manzana||'',r.lote||'',r.personal||0];
+    items.forEach(it=>{const u=(r.unidades||[]).find(u=>u.id===it.id); row.push(u?u.qty:0);});
+    row.push(r.obs||''); return row;
+  });
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  ws['!cols']=headers.map((_,i)=>({wch:i<2?12:i===headers.length-1?30:14}));
+  XLSX.utils.book_append_sheet(wb,ws,'Registros');
+  const resumenRows=[
+    ['GRUPO EDISUR – OBRAS DE LOTEOS II'],[''],
+    ['Obra:',obra.nombre],['Tipo:',obra.tipo],['Localidad:',obra.localidad||''],
+    ['Contratista:',obra.contratista||''],['Período:',`${desde} al ${hasta}`],[''],
+    ['DÍAS'],
+    ['Laborables:',regs.filter(r=>r.tipo==='laborable').length],
+    ['Lluvia:',regs.filter(r=>r.tipo==='lluvia').length],
+    ['Feriados:',regs.filter(r=>r.tipo==='feriado').length],
+    ['Jornadas/hombre:',regs.reduce((s,r)=>s+(r.personal||0),0)],[''],
+    ['PRODUCCIÓN'],['Ítem','Unidad','Período','Total acum.','Contrato','% Avance'],
+    ...items.map(it=>{
+      const period=regs.reduce((s,r)=>s+(r.unidades||[]).find(u=>u.id===it.id)?.qty||0,0);
+      const total=getRegistrosObra(obra.id).reduce((s,r)=>s+(r.unidades||[]).find(u=>u.id===it.id)?.qty||0,0);
+      const pct=it.totalContrato>0?Math.round(total/it.totalContrato*100)+' %':'—';
+      return [it.nombre,it.unidad,period,total,it.totalContrato||0,pct];
+    })
+  ];
+  const ws2=XLSX.utils.aoa_to_sheet(resumenRows);
+  ws2['!cols']=[{wch:30},{wch:12},{wch:14},{wch:14},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Resumen');
+  XLSX.writeFile(wb,`Edisur_${obra.nombre.replace(/\s+/g,'_')}_${desde}_${hasta}.xlsx`);
+  toast('✓ Excel generado');
+}
+
+// EXPORT PDF
+function exportPDF() {
+  const obra=getActiveObra(); if(!obra) return;
+  const desde=document.getElementById('rep-desde').value;
+  const hasta=document.getElementById('rep-hasta').value;
+  const regs=getRegistrosObra(obra.id).filter(r=>r.fecha>=desde&&r.fecha<=hasta).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const items=obra.items||[];
+  const diasLab=regs.filter(r=>r.tipo==='laborable').length;
+  const diasLluvia=regs.filter(r=>r.tipo==='lluvia').length;
+  const itemTotals={};
+  regs.forEach(r=>(r.unidades||[]).forEach(u=>{ if(!itemTotals[u.id]) itemTotals[u.id]={nombre:u.nombre,unidad:u.unidad,qty:0}; itemTotals[u.id].qty+=u.qty; }));
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reporte ${obra.nombre}</title>
+<style>
+body{font-family:Arial,sans-serif;font-size:11pt;color:#222;margin:0;padding:24px;}
+.header{border-bottom:3px solid #f59e0b;padding-bottom:12px;margin-bottom:16px;}
+.co-label{font-size:8pt;color:#888;text-transform:uppercase;letter-spacing:2px;}
+.co-name{font-size:20pt;font-weight:900;color:#0e1f30;margin:2px 0 0;}
+.co-div{font-size:13pt;color:#555;margin-bottom:4px;}
+h1{font-size:14pt;color:#0e1f30;margin:0;}
+.meta{font-size:10pt;color:#555;margin-bottom:14px;}
+h2{font-size:12pt;color:#0e1f30;border-bottom:1px solid #f59e0b;padding-bottom:3px;margin-top:20px;}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0 16px;}
+.stat{background:#f5f5f5;border-radius:6px;padding:10px 16px;text-align:center;min-width:80px;}
+.stat-val{font-size:20pt;font-weight:800;color:#0e1f30;}
+.stat-lab{font-size:8pt;color:#666;text-transform:uppercase;}
+table{width:100%;border-collapse:collapse;font-size:10pt;margin-top:8px;}
+th{background:#0e1f30;color:white;padding:7px 8px;text-align:left;}
+td{padding:6px 8px;border-bottom:1px solid #ddd;}
+tr:nth-child(even) td{background:#f9f9f9;}
+.footer{margin-top:28px;font-size:9pt;color:#aaa;border-top:1px solid #ddd;padding-top:8px;display:flex;justify-content:space-between;}
+</style></head><body>
+<div class="header">
+  <div class="co-label">Sistema de gestión de obra</div>
+  <div class="co-name">Grupo Edisur</div>
+  <div class="co-div">Obras de Loteos II</div>
+  <h1>Reporte: ${obra.nombre}</h1>
+</div>
+<div class="meta">${obra.tipo}${obra.localidad?' · '+obra.localidad:''}${obra.contratista?' · Contratista: '+obra.contratista:''}<br>
+Período: ${formatDate(desde)} al ${formatDate(hasta)} · Generado: ${new Date().toLocaleDateString('es-AR')}</div>
+<h2>RESUMEN DE DÍAS</h2>
+<div class="stats">
+  <div class="stat"><div class="stat-val">${diasLab}</div><div class="stat-lab">Laborables</div></div>
+  <div class="stat"><div class="stat-val">${diasLluvia}</div><div class="stat-lab">Lluvia</div></div>
+  <div class="stat"><div class="stat-val">${regs.filter(r=>r.tipo==='feriado').length}</div><div class="stat-lab">Feriados</div></div>
+  <div class="stat"><div class="stat-val">${regs.reduce((s,r)=>s+(r.personal||0),0)}</div><div class="stat-lab">Jorn./Hombre</div></div>
+</div>
+${Object.keys(itemTotals).length>0?`
+<h2>PRODUCCIÓN</h2>
+<table><tr><th>Ítem</th><th>Unidad</th><th>Período</th><th>Total acum.</th><th>Contrato</th><th>Avance</th></tr>
+${items.map(it=>{
+  const period=itemTotals[it.id]?.qty||0;
+  const total=getRegistrosObra(obra.id).reduce((s,r)=>s+(r.unidades||[]).find(u=>u.id===it.id)?.qty||0,0);
+  const pct=it.totalContrato>0?Math.round(total/it.totalContrato*100)+' %':'—';
+  return `<tr><td>${it.nombre}</td><td>${it.unidad}</td><td>${period}</td><td>${total}</td><td>${it.totalContrato||'—'}</td><td>${pct}</td></tr>`;
+}).join('')}
+</table>`:''}
+<h2>REGISTROS DIARIOS (${regs.length})</h2>
+<table><tr><th>Fecha</th><th>Tipo</th><th>Ubicación</th><th>Personal</th>${items.map(i=>`<th>${i.nombre}</th>`).join('')}<th>Observaciones</th></tr>
+${regs.map(r=>{
+  const loc=[r.barrio,r.manzana,r.lote].filter(Boolean).join('/');
+  return `<tr><td>${formatDate(r.fecha)}</td><td>${r.tipo}</td><td>${loc||'—'}</td><td>${r.personal||'—'}</td>
+  ${items.map(it=>{const u=(r.unidades||[]).find(u=>u.id===it.id);return `<td>${u&&u.qty>0?u.qty+' '+u.unidad:'—'}</td>`;}).join('')}
+  <td>${r.obs||'—'}</td></tr>`;
+}).join('')}
+</table>
+<div class="footer"><span>Grupo Edisur · Obras de Loteos II</span><span>${obra.nombre} · ${new Date().toLocaleString('es-AR')}</span></div>
+</body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),400);
+}
+
+// UTILS
+function getActiveObra() { return state.obras.find(o=>o.id===state.activeObraId&&o.estado==='activa'); }
+function getRegistrosObra(obraId) { return state.registros.filter(r=>r.obraId===obraId); }
+function formatDate(iso) { if(!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+
+// INIT
+loadState();
+renderHome();
+</script>
+</body>
+</html>
